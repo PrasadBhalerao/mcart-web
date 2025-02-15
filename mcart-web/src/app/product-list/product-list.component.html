@@ -1,0 +1,20 @@
+<div class="product-list">
+    <h2>Product List</h2>
+  
+    <div class="search-bar">
+      <input type="text" [(ngModel)]="searchTerm" (keyup)="filterProducts()" placeholder="Search products...">
+    </div>
+  
+    <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
+  
+    <div *ngIf="products.length === 0 && !errorMessage" class="loading">Loading products...</div>
+  
+    <div class="product-grid">
+      <div *ngFor="let product of filteredProducts" class="product-item">
+        <img [src]="product.productImageURL" alt="{{ product.productName }}" class="product-image">
+        <h3>{{ product.productName }}</h3>
+        <p>Category: {{ product.category }}</p>
+        <p>Price: {{ product.price | currency }}</p>
+        <button (click)="addToCart(product)">Add to Cart</button> </div>
+    </div>
+  </div>
