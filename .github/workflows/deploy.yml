@@ -62,6 +62,14 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Change to root directory
+        run: cd ${{ github.workspace }}
+
+      - name: Debug File Paths
+        run: |
+          pwd
+          ls -R manifests/
+
       - name: Replace Image Tag in Deployment
         run: |
           sed -i "s|<IMAGE_TAG>|${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.CONTAINER_NAME }}:${{ github.sha }}|g" manifests/deployment.yaml
