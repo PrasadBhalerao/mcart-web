@@ -11,10 +11,11 @@ permissions:
   contents: read
 
 env:
-  AZURE_CONTAINER_REGISTRY: prasadbhalerao
+  AZURE_CONTAINER_REGISTRY: prasadbhalerao.azurecr.io
   CONTAINER_NAME: mcart-angularapp
   RESOURCE_GROUP: Mcart-RG
   CLUSTER_NAME: Mcart-AKS-Cluster
+  NAMESPACE: default # Add your Kubernetes namespace
 
 jobs:
   build:
@@ -47,7 +48,7 @@ jobs:
 
       - name: Check Docker container file structure
         run: |
-          docker run --rm prasadbhalerao/mcart-angularapp:${{ github.sha }} ls -R /manifests
+          docker run --rm ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.CONTAINER_NAME }}:${{ github.sha }} ls -R /manifests
 
   deploy:
     needs: build
@@ -61,25 +62,18 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Get AKS credentials
-        run: |
-          az aks get-credentials --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.CLUSTER_NAME }}
-
-      - name: Debug File Paths
-        run: |
-          pwd
-          ls -R
-
-      - name: Debug File Paths
-        run: |
-          find . -name "deployment.yaml"
-
       - name: Replace Image Tag in Deployment
         run: |
-          sed -i "s|<IMAGE_TAG>|${{ github.sha }}|g" manifests/deployment.yaml
+          sed -i "s|<IMAGE_TAG>|${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.CONTAINER_NAME }}:${{ github.sha }}|g" manifests/deployment.yaml
 
-          kubectl apply -f manifests/
+      - name: Apply Kubernetes Deployment
+        run: |
+          kubectl apply -n ${{ env.NAMESPACE }} -f manifests/deployment.yaml || exit 1
+
+      - name: Apply Kubernetes Service
+        run: |
+          kubectl apply -n ${{ env.NAMESPACE }} -f manifests/service.yaml || exit 1
 
       - name: Verify Deployment
         run: |
-          kubectl get pods -n default
+          kubectl get pods -n ${{ env.NAMESPACE }} || exit 1
