@@ -45,6 +45,10 @@ jobs:
           docker build -t ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.CONTAINER_NAME }}:${{ github.sha }} .
           docker push ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.CONTAINER_NAME }}:${{ github.sha }}
 
+      - name: Check Docker container file structure
+        run: |
+          docker run --rm prasadbhalerao/mcart-angularapp:${{ github.sha }} ls -R /usr/share/nginx/html
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
