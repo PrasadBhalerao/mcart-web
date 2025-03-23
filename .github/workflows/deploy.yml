@@ -47,7 +47,7 @@ jobs:
 
       - name: Check Docker container file structure
         run: |
-          docker run --rm prasadbhalerao/mcart-angularapp:${{ github.sha }} ls -R /usr/share/nginx/html
+          docker run --rm prasadbhalerao/mcart-angularapp:${{ github.sha }} ls -R /manifests
 
   deploy:
     needs: build
