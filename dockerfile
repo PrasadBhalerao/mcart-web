@@ -14,7 +14,7 @@ RUN npm run build --prod
 # Use nginx to serve the Angular app
 FROM nginx:alpine
 COPY --from=build /app/dist/mcart-web /usr/share/nginx/html
-COPY manifests /manifests
+COPY ./manifests /manifests
 
 # Expose port 80
 EXPOSE 80
