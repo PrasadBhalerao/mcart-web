@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcart-angularapp
+  namespace: default
+  labels:
+    app: mcart-angularapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mcart-angularapp
+  template:
+    metadata:
+      labels:
+        app: mcart-angularapp
+    spec:
+      containers:
+        - name: mcart-angularapp
+          image: prasadbhalerao/mcart-angularapp:<IMAGE_TAG>
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"

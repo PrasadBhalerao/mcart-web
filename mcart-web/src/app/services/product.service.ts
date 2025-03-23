@@ -4,17 +4,19 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { Product } from '../models/product.model';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ProductService {
-  private apiUrl = 'http://localhost:5000/api/product'; // Replace with your API URL
+  private apiUrl = environment.apiUrl;
+  //private apiUrl = 'http://localhost:5000/api/product'; // Replace with your API URL
 
   constructor(private http: HttpClient) { }
 
   getProducts(): Observable<Product[]> {
-    return this.http.get<Product[]>(this.apiUrl).pipe(
+    return this.http.get<Product[]>(`${this.apiUrl}/api/products`).pipe(
       catchError(this.handleError)
     );
   }
