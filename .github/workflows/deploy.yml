@@ -58,20 +58,31 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         
+      
       - name: Azure Login
-        uses: azure/login@v1
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          az login --service-principal -u ${{ secrets.AZURE_CLIENT_ID }} -p ${{ secrets.AZURE_CLIENT_SECRET }} --tenant ${{ secrets.AZURE_TENANT_ID }}
+
+      - name: Set Azure Subscription
+        run: |
+          az account set --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get AKS Credentials
+        run: |
+          az aks get-credentials --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.CLUSTER_NAME }} --overwrite-existing
+
+      - name: Set KUBECONFIG
+        run: |
+          export KUBECONFIG=$HOME/.kube/config
+
+      - name: Debug Kubernetes Context
+        run: |
+          kubectl config view
+          kubectl config current-context
+          kubectl get nodes
 
       - name: Change to root directory
         run: cd ${{ github.workspace }}
-
-      - name: Debug File Paths
-        run: |
-          pwd
-          ls -R manifests/
 
       - name: Replace Image Tag in Deployment
         run: |
