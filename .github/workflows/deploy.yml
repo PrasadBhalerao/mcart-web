@@ -61,9 +61,14 @@ jobs:
         run: |
           az aks get-credentials --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.CLUSTER_NAME }}
 
+      - name: Debug File Paths
+        run: |
+          pwd
+          ls -R
+
       - name: Replace Image Tag in Deployment
         run: |
-          sed -i "s|<IMAGE_TAG>|${{ github.sha }}|g" deployment.yaml
+          sed -i "s|<IMAGE_TAG>|${{ github.sha }}|g" manifests/deployment.yaml
 
           kubectl apply -f manifests/
 
