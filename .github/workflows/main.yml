@@ -1,10 +1,11 @@
 name: Build and Deploy Angular App to AKS
 
 on:
+  workflow_dispatch:
+  
   push:
     branches:
       - main
-  workflow_dispatch:
 
 env:
   AZURE_CONTAINER_REGISTRY: prasadbhalerao
