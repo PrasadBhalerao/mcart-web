@@ -15,7 +15,7 @@ env:
   CONTAINER_NAME: mcart-angularapp
   RESOURCE_GROUP: Mcart-RG
   CLUSTER_NAME: Mcart-AKS-Cluster
-  NAMESPACE: default
+  NAMESPACE: default # Add your Kubernetes namespace
 
 jobs:
   build:
@@ -46,6 +46,10 @@ jobs:
           docker build -t ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.CONTAINER_NAME }}:${{ github.sha }} .
           docker push ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.CONTAINER_NAME }}:${{ github.sha }}
 
+      - name: Check Docker container file structure
+        run: |
+          docker run --rm ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.CONTAINER_NAME }}:${{ github.sha }} ls -R /manifests
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
@@ -54,17 +58,31 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         
+      
       - name: Azure Login
-        uses: azure/login@v1
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          auth-type: IDENTITY
+        run: |
+          az login --service-principal -u ${{ secrets.AZURE_CLIENT_ID }} -p ${{ secrets.AZURE_CLIENT_SECRET }} --tenant ${{ secrets.AZURE_TENANT_ID }}
+
+      - name: Set Azure Subscription
+        run: |
+          az account set --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Get AKS Credentials
         run: |
           az aks get-credentials --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.CLUSTER_NAME }} --overwrite-existing
+
+      - name: Set KUBECONFIG
+        run: |
+          export KUBECONFIG=$HOME/.kube/config
+
+      - name: Debug Kubernetes Context
+        run: |
+          kubectl config view
+          kubectl config current-context
+          kubectl get nodes
+
+      - name: Change to root directory
+        run: cd ${{ github.workspace }}
 
       - name: Replace Image Tag in Deployment
         run: |
