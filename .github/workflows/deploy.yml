@@ -66,6 +66,10 @@ jobs:
           pwd
           ls -R
 
+      - name: Debug File Paths
+        run: |
+          find . -name "deployment.yaml"
+
       - name: Replace Image Tag in Deployment
         run: |
           sed -i "s|<IMAGE_TAG>|${{ github.sha }}|g" manifests/deployment.yaml
