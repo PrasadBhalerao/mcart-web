@@ -5,9 +5,8 @@ FROM node:20 AS build
 WORKDIR /app
 
 # Copy files and install dependencies
-COPY package*.json ./
-RUN npm install
 COPY . .
+RUN npm install
 
 # Build Angular app
 RUN npm run build --prod
@@ -15,6 +14,7 @@ RUN npm run build --prod
 # Use nginx to serve the Angular app
 FROM nginx:alpine
 COPY --from=build /app/dist/mcart-web /usr/share/nginx/html
+COPY manifests /manifests
 
 # Expose port 80
 EXPOSE 80
