@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 env:
-  AZURE_CONTAINER_REGISTRY: prasadbhalerao.azurecr.io
+  AZURE_CONTAINER_REGISTRY: prasadbhalerao
   CONTAINER_NAME: mcart-angularapp
   RESOURCE_GROUP: Mcart-RG
   CLUSTER_NAME: Mcart-AKS-Cluster
