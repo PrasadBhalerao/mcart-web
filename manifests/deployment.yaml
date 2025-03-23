@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: mcart-angularapp
-          image: prasadbhalerao/mcart-angularapp:${SHA_TAG}
+          image: prasadbhalerao/mcart-angularapp:<IMAGE_TAG>
           ports:
             - containerPort: 80
           resources:
