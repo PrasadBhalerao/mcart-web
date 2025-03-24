@@ -1,4 +1,4 @@
-name: Build and Deploy Angular App to AKS
+name: Deploy Angular App to Azure Storage
 
 on:
   push:
@@ -11,14 +11,14 @@ permissions:
   contents: read
 
 env:
-  AZURE_CONTAINER_REGISTRY: prasadbhalerao
-  CONTAINER_NAME: mcart-angularapp
+  AZURE_STORAGE_ACCOUNT: mcartsa # Replace with your storage account name
+  AZURE_STORAGE_CONTAINER: '$web' # Use $web for static website hosting
   RESOURCE_GROUP: Mcart-RG
-  CLUSTER_NAME: Mcart-AKS-Cluster
-  NAMESPACE: default # Add your Kubernetes namespace
+  INDEX_DOCUMENT: index.html # the index document
+  ERROR_DOCUMENT: 404.html # the 404 error document
 
 jobs:
-  build:
+  build_and_deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -34,64 +34,30 @@ jobs:
         run: |
           npm install
           npm run build --prod
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build and push Docker image
-        run: |
-          docker build -t ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.CONTAINER_NAME }}:${{ github.sha }} .
-          docker push ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.CONTAINER_NAME }}:${{ github.sha }}
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      
       - name: Azure Login
         run: |
           az login --service-principal -u ${{ secrets.AZURE_CLIENT_ID }} -p ${{ secrets.AZURE_CLIENT_SECRET }} --tenant ${{ secrets.AZURE_TENANT_ID }}
 
-      - name: Set Azure Subscription
+      - name: Upload to Azure Storage
         run: |
-          az account set --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          az storage blob upload-batch \
+            --account-name ${{ env.AZURE_STORAGE_ACCOUNT }} \
+            --destination ${{ env.AZURE_STORAGE_CONTAINER }} \
+            --source dist/mcart-web \
+            --overwrite
 
-      - name: Get AKS Credentials
+      - name: Configure Static Website
         run: |
-          az aks get-credentials --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.CLUSTER_NAME }} --overwrite-existing
+          az storage blob service-properties update \
+            --account-name ${{ env.AZURE_STORAGE_ACCOUNT }} \
+            --static-website \
+            --index-document ${{ env.INDEX_DOCUMENT }} \
+            --404-document ${{ env.ERROR_DOCUMENT }}
 
-      - name: Set KUBECONFIG
+      - name: Get Storage Endpoint
         run: |
-          export KUBECONFIG=$HOME/.kube/config
-
-      - name: Debug Kubernetes Context
-        run: |
-          kubectl config view
-          kubectl config current-context
-          kubectl get nodes
-
-      - name: Change to root directory
-        run: cd ${{ github.workspace }}
-
-      - name: Replace Image Tag in Deployment
-        run: |
-          sed -i "s|<IMAGE_TAG>|${{ github.sha }}|g" manifests/deployment.yaml
-
-      - name: Apply Kubernetes Deployment
-        run: |
-          kubectl apply -n ${{ env.NAMESPACE }} -f manifests/deployment.yaml || exit 1
-
-      - name: Apply Kubernetes Service
-        run: |
-          kubectl apply -n ${{ env.NAMESPACE }} -f manifests/service.yaml || exit 1
-
-      - name: Verify Deployment
-        run: |
-          kubectl get pods -n ${{ env.NAMESPACE }} || exit 1
+          echo "Storage Endpoint:"
+          az storage account show \
+            --name ${{ env.AZURE_STORAGE_ACCOUNT }} \
+            --query "primaryEndpoints.web" \
+            -o tsv
