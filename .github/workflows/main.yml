@@ -41,11 +41,13 @@ jobs:
 
       - name: Upload to Azure Storage
         run: |
+          echo "AZURE_STORAGE_CONTAINER: ${{ env.AZURE_STORAGE_CONTAINER }}"
           az storage blob upload-batch \
             --account-name ${{ env.AZURE_STORAGE_ACCOUNT }} \
-            --destination "${{ env.AZURE_STORAGE_CONTAINER }}" \
+            --destination '$web' \
             --source dist/mcart-web \
-            --overwrite
+            --overwrite \
+            --auth-mode login
 
       - name: Configure Static Website
         run: |
