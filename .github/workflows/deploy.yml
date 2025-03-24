@@ -46,6 +46,10 @@ jobs:
           docker build -t ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.CONTAINER_NAME }}:${{ github.sha }} .
           docker push ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.CONTAINER_NAME }}:${{ github.sha }}
 
+      - name: Check directory files
+        run: |
+          ls -lR /usr/share/nginx/html/
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
