@@ -1,17 +1,21 @@
 name: Build and Deploy Angular App to AKS
 
 on:
-  workflow_dispatch:
-  
   push:
     branches:
       - main
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
 
 env:
   AZURE_CONTAINER_REGISTRY: prasadbhalerao
   CONTAINER_NAME: mcart-angularapp
   RESOURCE_GROUP: Mcart-RG
   CLUSTER_NAME: Mcart-AKS-Cluster
+  NAMESPACE: default # Add your Kubernetes namespace
 
 jobs:
   build:
@@ -47,22 +51,47 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      
       - name: Azure Login
-        uses: azure/login@v1
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Get AKS credentials
         run: |
-          az aks get-credentials --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.CLUSTER_NAME }}
+          az login --service-principal -u ${{ secrets.AZURE_CLIENT_ID }} -p ${{ secrets.AZURE_CLIENT_SECRET }} --tenant ${{ secrets.AZURE_TENANT_ID }}
 
-      - name: Deploy to AKS
+      - name: Set Azure Subscription
         run: |
-          sed -i "s|<IMAGE_TAG>|${{ github.sha }}|g" manifests/angular-deployment.yaml
-          kubectl apply -f manifests/
+          az account set --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get AKS Credentials
+        run: |
+          az aks get-credentials --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.CLUSTER_NAME }} --overwrite-existing
+
+      - name: Set KUBECONFIG
+        run: |
+          export KUBECONFIG=$HOME/.kube/config
+
+      - name: Debug Kubernetes Context
+        run: |
+          kubectl config view
+          kubectl config current-context
+          kubectl get nodes
+
+      - name: Change to root directory
+        run: cd ${{ github.workspace }}
+
+      - name: Replace Image Tag in Deployment
+        run: |
+          sed -i "s|<IMAGE_TAG>|${{ github.sha }}|g" manifests/deployment.yaml
+
+      - name: Apply Kubernetes Deployment
+        run: |
+          kubectl apply -n ${{ env.NAMESPACE }} -f manifests/deployment.yaml || exit 1
+
+      - name: Apply Kubernetes Service
+        run: |
+          kubectl apply -n ${{ env.NAMESPACE }} -f manifests/service.yaml || exit 1
 
       - name: Verify Deployment
         run: |
-          kubectl get pods -n default
+          kubectl get pods -n ${{ env.NAMESPACE }} || exit 1
