@@ -41,11 +41,9 @@ jobs:
 
       - name: Upload to Azure Storage
         run: |
-          export AZURE_STORAGE_CONTAINER='\$web'
-          echo "AZURE_STORAGE_CONTAINER: $AZURE_STORAGE_CONTAINER"
           az storage blob upload-batch \
             --account-name ${{ env.AZURE_STORAGE_ACCOUNT }} \
-            --destination "$AZURE_STORAGE_CONTAINER" \
+            --destination '$web' \
             --source dist/mcart-web \
             --overwrite \
             --auth-mode login
