@@ -11,7 +11,7 @@
   
     <div class="product-grid">
       <div *ngFor="let product of filteredProducts" class="product-item">
-        <img [src]="product.productImageURL" alt="{{ product.productName }}" class="product-image">
+        <img [src]="product.productImage" alt="{{ product.productName }}" class="product-image">
         <h3>{{ product.productName }}</h3>
         <p>Category: {{ product.category }}</p>
         <p>Price: {{ product.price | currency }}</p>
